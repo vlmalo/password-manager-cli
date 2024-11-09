@@ -54,9 +54,26 @@ public class UserService {
         return EncryptionUtils.decrypt(encryptedPassword, secretKey);
     }
 
+    public void deletePassword(int passwordId) throws Exception {
+        if (!userRepository.deletePasswordById(passwordId)) {
+            throw new Exception("Password entry not found.");
+        }
+    }
+
+    public void modifyPassword(int passwordId, String newDescription, String newPlainPassword, User user) throws Exception {
+        byte[] salt = EncryptionUtils.generateSalt();
+        SecretKey secretKey = EncryptionUtils.deriveKeyFromPassword(user.getPasswordHash(), salt);
+        String newEncryptedPassword = EncryptionUtils.encrypt(newPlainPassword, secretKey);
+
+        if (!userRepository.updatePassword(passwordId, newDescription, newEncryptedPassword, salt)) {
+            throw new Exception("Failed to update password entry.");
+        }
+    }
 
     public List<PasswordEntry> getPasswordsForUser(int userId) {
         return userRepository.findPasswordsByUserId(userId);
     }
-
+    public User getUserById(int userId) {
+        return userRepository.findById(userId);
+            }
 }

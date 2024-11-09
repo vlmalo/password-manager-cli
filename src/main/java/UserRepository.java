@@ -89,4 +89,32 @@ public class UserRepository {
         return passwords;
     }
 
+    public boolean deletePasswordById(int passwordId) {
+        String sql = "DELETE FROM passwords WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, passwordId);
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    public boolean updatePassword(int passwordId, String newDescription, String newEncryptedPassword, byte[] newSalt) {
+        String sql = "UPDATE passwords SET description = ?, encrypted_password = ?, salt = ? WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, newDescription);
+            stmt.setString(2, newEncryptedPassword);
+            stmt.setBytes(3, newSalt);
+            stmt.setInt(4, passwordId);
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 }
