@@ -2,6 +2,7 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 
 import javax.crypto.SecretKey;
 import java.util.List;
+import java.util.UUID;
 
 public class UserService {
     private final UserRepository userRepository;
@@ -11,6 +12,7 @@ public class UserService {
     }
 
     public void register(String email, String password) throws Exception {
+
         if (userRepository.findByEmail(email) != null) {
             throw new Exception("Registration failed.");
         }
@@ -25,8 +27,8 @@ public class UserService {
         return user != null && BCrypt.checkpw(password, user.getPasswordHash());
     }
 
-    public void addPassword(int userId, String description, String plainPassword) throws Exception {
-        User user = userRepository.findById(userId);
+    public void addPassword(String email, String description, String plainPassword) throws Exception {
+        User user = userRepository.findByEmail(email);
         if (user == null) {
             throw new Exception("User not found.");
         }
@@ -35,8 +37,9 @@ public class UserService {
         SecretKey secretKey = EncryptionUtils.deriveKeyFromPassword(user.getPasswordHash(), salt);
         String encryptedPassword = EncryptionUtils.encrypt(plainPassword, secretKey);
 
-        userRepository.savePassword(userId, description, encryptedPassword, salt);
+        userRepository.savePassword(email, description, encryptedPassword, salt);
     }
+
     public int findUserIdByEmail(String email) {
         User user = userRepository.findByEmail(email);
         if (user != null) {
@@ -44,8 +47,8 @@ public class UserService {
         }
         return -1;
     }
-    public String decryptPassword(int userId, String encryptedPassword, byte[] salt) throws Exception {
-        User user = userRepository.findById(userId);
+    public String decryptPassword(String email, String encryptedPassword, byte[] salt) throws Exception {
+        User user = userRepository.findByEmail(email);
         if (user == null) {
             throw new Exception("User not found.");
         }
@@ -54,13 +57,14 @@ public class UserService {
         return EncryptionUtils.decrypt(encryptedPassword, secretKey);
     }
 
-    public void deletePassword(int passwordId) throws Exception {
-        if (!userRepository.deletePasswordById(passwordId)) {
+    public void deletePassword(UUID passwordId, String email) throws Exception {
+        if (!userRepository.deletePasswordByIdAndEmail(passwordId, email)) {
             throw new Exception("Password entry not found.");
         }
     }
 
-    public void modifyPassword(int passwordId, String newDescription, String newPlainPassword, User user) throws Exception {
+
+    public void modifyPassword(UUID passwordId, String newDescription, String newPlainPassword, User user) throws Exception {
         byte[] salt = EncryptionUtils.generateSalt();
         SecretKey secretKey = EncryptionUtils.deriveKeyFromPassword(user.getPasswordHash(), salt);
         String newEncryptedPassword = EncryptionUtils.encrypt(newPlainPassword, secretKey);
@@ -70,10 +74,14 @@ public class UserService {
         }
     }
 
-    public List<PasswordEntry> getPasswordsForUser(int userId) {
-        return userRepository.findPasswordsByUserId(userId);
+    public List<PasswordEntry> getPasswordsForUser(String email) {
+        return userRepository.findPasswordsByEmail(email);
     }
-    public User getUserById(int userId) {
-        return userRepository.findById(userId);
-            }
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+    public boolean emailExists(String email) {
+        return userRepository.findByEmail(email) != null;
+    }
+
 }

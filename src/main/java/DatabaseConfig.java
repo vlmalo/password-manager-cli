@@ -12,6 +12,10 @@ public class DatabaseConfig {
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              Statement stmt = conn.createStatement()) {
 
+            // Enable the uuid-ossp extension for UUID generation
+            String enableUuidExtension = "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";";
+            stmt.executeUpdate(enableUuidExtension);
+
             // Create users table
             String sql = "CREATE TABLE IF NOT EXISTS users (" +
                     "id SERIAL PRIMARY KEY, " +
@@ -22,11 +26,12 @@ public class DatabaseConfig {
 
             // Create passwords table with salt column
             String createPasswordsTable = "CREATE TABLE IF NOT EXISTS passwords (" +
-                    "id SERIAL PRIMARY KEY, " +
-                    "user_id INTEGER REFERENCES users(id), " +
+                    "user_email VARCHAR(255) REFERENCES users(email) ON DELETE CASCADE, " +
+                    "password_id UUID DEFAULT uuid_generate_v4(), " +
                     "description VARCHAR(255), " +
                     "encrypted_password TEXT NOT NULL, " +
-                    "salt BYTEA NOT NULL" +
+                    "salt BYTEA NOT NULL, " +
+                    "PRIMARY KEY (user_email, password_id)" +
                     ");";
             stmt.executeUpdate(createPasswordsTable);
 

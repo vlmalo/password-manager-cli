@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class UserRepository {
     private static final String URL = "jdbc:postgresql://localhost:5432/userlist_db_cli";
@@ -56,11 +57,11 @@ public class UserRepository {
         return null;
     }
 
-    public void savePassword(int userId, String description, String encryptedPassword, byte[] salt) {
-        String sql = "INSERT INTO passwords (user_id, description, encrypted_password, salt) VALUES (?, ?, ?, ?)";
+    public void savePassword(String email, String description, String encryptedPassword, byte[] salt) {
+        String sql = "INSERT INTO passwords (user_email, description, encrypted_password, salt) VALUES (?, ?, ?, ?)";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
+            stmt.setString(1, email);
             stmt.setString(2, description);
             stmt.setString(3, encryptedPassword);
             stmt.setBytes(4, salt);
@@ -69,15 +70,18 @@ public class UserRepository {
             e.printStackTrace();
         }
     }
-    public List<PasswordEntry> findPasswordsByUserId(int userId) {
+
+    public List<PasswordEntry> findPasswordsByEmail(String email) {
         List<PasswordEntry> passwords = new ArrayList<>();
-        String sql = "SELECT * FROM passwords WHERE user_id = ?";
+        String sql = "SELECT * FROM passwords WHERE user_email = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, userId);
+            stmt.setString(1, email);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                int id = rs.getInt("id");
+                // Change from int to UUID
+                String idString = rs.getString("password_id");  // Retrieve as string
+                UUID id = UUID.fromString(idString);            // Convert to UUID
                 String description = rs.getString("description");
                 String encryptedPassword = rs.getString("encrypted_password");
                 byte[] salt = rs.getBytes("salt");
@@ -89,11 +93,12 @@ public class UserRepository {
         return passwords;
     }
 
-    public boolean deletePasswordById(int passwordId) {
-        String sql = "DELETE FROM passwords WHERE id = ?";
+    public boolean deletePasswordByIdAndEmail(UUID passwordId, String email) {
+        String sql = "DELETE FROM passwords WHERE password_id = ? AND user_email = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, passwordId);
+            stmt.setObject(1, passwordId);
+            stmt.setString(2, email);
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
@@ -101,14 +106,14 @@ public class UserRepository {
         }
         return false;
     }
-    public boolean updatePassword(int passwordId, String newDescription, String newEncryptedPassword, byte[] newSalt) {
-        String sql = "UPDATE passwords SET description = ?, encrypted_password = ?, salt = ? WHERE id = ?";
+    public boolean updatePassword(UUID passwordId, String newDescription, String newEncryptedPassword, byte[] newSalt) {
+        String sql = "UPDATE passwords SET description = ?, encrypted_password = ?, salt = ? WHERE password_2id = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, newDescription);
             stmt.setString(2, newEncryptedPassword);
             stmt.setBytes(3, newSalt);
-            stmt.setInt(4, passwordId);
+            stmt.setObject(4, passwordId);
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
         } catch (SQLException e) {
