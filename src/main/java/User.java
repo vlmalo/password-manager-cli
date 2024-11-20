@@ -1,21 +1,24 @@
+import java.util.UUID;
+
 public class User {
-    private int id;
+    private UUID id;
     private String email;
     private String passwordHash;
 
-    public User(int id, String email, String passwordHash) {
+    public User(UUID id, String email, String passwordHash) {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
     }
 
     public User(String email, String passwordHash) {
+        this.id = UUID.randomUUID(); // Generate a new UUID if not provided
         this.email = email;
         this.passwordHash = passwordHash;
     }
 
     // Getters
-    public int getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -27,7 +30,7 @@ public class User {
         return passwordHash;
     }
 
-    public void setId(int id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 }

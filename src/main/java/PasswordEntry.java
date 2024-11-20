@@ -25,4 +25,3 @@ public class PasswordEntry {
         return UUID.randomUUID();
     }
 }
-

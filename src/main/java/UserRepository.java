@@ -31,7 +31,7 @@ public class UserRepository {
             stmt.setString(1, email);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                int id = rs.getInt("id");
+                UUID id = UUID.fromString(rs.getString("id"));
                 String passwordHash = rs.getString("password_hash");
                 return new User(id, email, passwordHash);
             }
@@ -40,11 +40,11 @@ public class UserRepository {
         }
         return null;
     }
-    public User findById(int id) {
+    public User findById(UUID id) {
         String sql = "SELECT * FROM users WHERE id = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, id);
+            stmt.setObject(1, id);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 String email = rs.getString("email");
@@ -80,7 +80,7 @@ public class UserRepository {
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 // Change from int to UUID
-                String idString = rs.getString("password_id");  // Retrieve as string
+                String idString = rs.getString("password_id");
                 UUID id = UUID.fromString(idString);            // Convert to UUID
                 String description = rs.getString("description");
                 String encryptedPassword = rs.getString("encrypted_password");
@@ -107,7 +107,7 @@ public class UserRepository {
         return false;
     }
     public boolean updatePassword(UUID passwordId, String newDescription, String newEncryptedPassword, byte[] newSalt) {
-        String sql = "UPDATE passwords SET description = ?, encrypted_password = ?, salt = ? WHERE password_2id = ?";
+        String sql = "UPDATE passwords SET description = ?, encrypted_password = ?, salt = ? WHERE password_id = ?";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, newDescription);

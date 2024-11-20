@@ -40,13 +40,11 @@ public class UserService {
         userRepository.savePassword(email, description, encryptedPassword, salt);
     }
 
-    public int findUserIdByEmail(String email) {
+    public UUID findUserIdByEmail(String email) {
         User user = userRepository.findByEmail(email);
-        if (user != null) {
-            return user.getId();
-        }
-        return -1;
+        return user != null ? user.getId() : null;
     }
+
     public String decryptPassword(String email, String encryptedPassword, byte[] salt) throws Exception {
         User user = userRepository.findByEmail(email);
         if (user == null) {

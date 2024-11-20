@@ -18,7 +18,7 @@ public class DatabaseConfig {
 
             // Create users table
             String sql = "CREATE TABLE IF NOT EXISTS users (" +
-                    "id SERIAL PRIMARY KEY, " +
+                    "id UUID DEFAULT uuid_generate_v4(), " +
                     "email VARCHAR(255) NOT NULL UNIQUE, " +
                     "password_hash VARCHAR(255) NOT NULL" +
                     ");";
