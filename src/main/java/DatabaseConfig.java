@@ -9,6 +9,7 @@ public class DatabaseConfig {
     private static final String PASSWORD = "postgres";
 
     public static void initializeDatabase() {
+
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              Statement stmt = conn.createStatement()) {
 

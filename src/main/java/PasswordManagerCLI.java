@@ -1,3 +1,4 @@
+
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.io.Console;
@@ -78,7 +79,6 @@ public class PasswordManagerCLI {
             return;
         }
 
-        System.out.print("Enter password: ");
         String password = maskPasswordInput();
 
         if (password.length() < MIN_PASSWORD_LENGTH) {
@@ -90,6 +90,14 @@ public class PasswordManagerCLI {
             return;
         }
 
+        String repeatPassword = maskPasswordInput();
+
+        if (!password.equals(repeatPassword)) {
+            System.out.println("Passwords do not match. Please try again.");
+            return;
+        }
+
+        // Check if the email already exists
         if (userService.emailExists(email)) {
             System.out.println("Error: Registration failed.");
             return;
@@ -103,6 +111,7 @@ public class PasswordManagerCLI {
         }
     }
 
+
     private void loginUser() {
         System.out.println("\n=== User Login ===");
         System.out.print("Enter email: ");
@@ -114,7 +123,6 @@ public class PasswordManagerCLI {
             return;
         }
 
-        System.out.print("Enter password: ");
         String password = maskPasswordInput();
 
         if (password.isEmpty()) {
@@ -223,8 +231,7 @@ public class PasswordManagerCLI {
             return;
         }
 
-        System.out.print("Enter the password: ");
-        String password = scanner.nextLine().trim();
+        String password = maskPasswordInput();
 
         if (password.isEmpty()) {
             System.out.println("Password cannot be empty.");
@@ -238,6 +245,7 @@ public class PasswordManagerCLI {
             System.out.println("Error adding password: " + e.getMessage());
         }
     }
+
     private void modifyPassword(String email) {
         System.out.println("\n=== Modify Passwords ===");
 
@@ -284,9 +292,8 @@ public class PasswordManagerCLI {
                     continue;
                 }
 
-                // Prompt for a new password
                 System.out.print("Enter the new password: ");
-                String newPassword = scanner.nextLine().trim();
+                String newPassword = maskPasswordInput();
                 if (newPassword.isEmpty()) {
                     System.out.println("Password cannot be empty.");
                     continue;
