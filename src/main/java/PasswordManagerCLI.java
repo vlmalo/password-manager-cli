@@ -292,7 +292,6 @@ public class PasswordManagerCLI {
                     continue;
                 }
 
-                System.out.print("Enter the new password: ");
                 String newPassword = maskPasswordInput();
                 if (newPassword.isEmpty()) {
                     System.out.println("Password cannot be empty.");
