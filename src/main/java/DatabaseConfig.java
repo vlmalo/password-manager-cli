@@ -1,3 +1,6 @@
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -7,6 +10,7 @@ public class DatabaseConfig {
     private static final String URL = "jdbc:postgresql://localhost:5432/userlist_db_cli";
     private static final String USER = "postgres";
     private static final String PASSWORD = "postgres";
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseConfig.class);
 
     public static void initializeDatabase() {
 
@@ -16,6 +20,7 @@ public class DatabaseConfig {
             // Enable the uuid-ossp extension for UUID generation
             String enableUuidExtension = "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";";
             stmt.executeUpdate(enableUuidExtension);
+            logger.info("UUID extension enabled.");
 
             // Create users table
             String sql = "CREATE TABLE IF NOT EXISTS users (" +
@@ -24,6 +29,7 @@ public class DatabaseConfig {
                     "password_hash VARCHAR(255) NOT NULL" +
                     ");";
             stmt.executeUpdate(sql);
+            logger.info("Users table created or already exists.");
 
             // Create passwords table with salt column
             String createPasswordsTable = "CREATE TABLE IF NOT EXISTS passwords (" +
@@ -35,10 +41,12 @@ public class DatabaseConfig {
                     "PRIMARY KEY (user_email, password_id)" +
                     ");";
             stmt.executeUpdate(createPasswordsTable);
+            logger.info("Passwords table created or already exists.");
 
-            System.out.println("Database initialized.");
+            logger.info("Database initialized successfully.");
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error("Error initializing the database.", e);
+            throw new RuntimeException("Database initialization failed", e);
         }
     }
 }

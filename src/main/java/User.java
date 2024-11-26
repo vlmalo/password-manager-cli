@@ -12,7 +12,7 @@ public class User {
     }
 
     public User(String email, String passwordHash) {
-        this.id = UUID.randomUUID(); // Generate a new UUID if not provided
+        this.id = UUID.randomUUID();
         this.email = email;
         this.passwordHash = passwordHash;
     }

@@ -1,26 +1,37 @@
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.io.Console;
+import java.time.Instant;
+import java.util.*;
 import java.util.List;
-import java.util.Scanner;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class PasswordManagerCLI {
+    private static final Logger logger = LoggerFactory.getLogger(PasswordManagerCLI.class);
     private static final Scanner scanner = new Scanner(System.in);
     private final UserService userService;
+    private final Map<String, Integer> failedAttempts = new HashMap<>();
+    private final Map<String, Instant> blockedUsers = new HashMap<>();
+
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final long BLOCK_DURATION_MS = 300_000; // ms, 5 minutes
 
     // Patterns and length constraints for validations
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
-    private static final int MIN_PASSWORD_LENGTH = 8;
-    private static final int MAX_EMAIL_LENGTH = 255;
-    private static final int MAX_PASSWORD_HASH_LENGTH = 255;
-    private static final int MAX_DESCRIPTION_LENGTH = 255;
+    public static final int MIN_PASSWORD_LENGTH = 8;
+    private static final int MAX_EMAIL_LENGTH = 60;
+    public static final int MAX_PASSWORD_LENGTH = 30;
+    private static final int MAX_DESCRIPTION_LENGTH = 200;
+    public static final String ALLOWED_PASSWORD_PATTERN = "^[A-Za-z0-9!@#$%^&*]+$";
     private static final Pattern ALLOWED_DESCRIPTION_PATTERN = Pattern.compile("^[A-Za-z0-9 .,!?_-]*$");
 
     public PasswordManagerCLI(UserService userService) {
         this.userService = userService;
+
     }
 
     public static void main(String[] args) {
@@ -33,6 +44,7 @@ public class PasswordManagerCLI {
     }
 
     private void start() {
+
         boolean running = true;
 
         while (running) {
@@ -72,6 +84,7 @@ public class PasswordManagerCLI {
 
         if (!InputValidator.isValidInput(email) || !EMAIL_PATTERN.matcher(email).matches()) {
             System.out.println("Invalid email format. Please try again.");
+            logger.warn("Invalid email format: {}", email);
             return;
         }
         if (email.length() > MAX_EMAIL_LENGTH) {
@@ -85,10 +98,11 @@ public class PasswordManagerCLI {
             System.out.println("Password must be at least " + MIN_PASSWORD_LENGTH + " characters long.");
             return;
         }
-        if (password.length() > MAX_PASSWORD_HASH_LENGTH) {
-            System.out.println("Password is too long. Maximum length is " + MAX_PASSWORD_HASH_LENGTH + " characters.");
+        if (password.length() > MAX_PASSWORD_LENGTH) {
+            System.out.println("Password is too long. Maximum length is " + MAX_PASSWORD_LENGTH + " characters.");
             return;
         }
+
 
         String repeatPassword = maskPasswordInput();
 
@@ -106,9 +120,15 @@ public class PasswordManagerCLI {
         try {
             userService.register(email, password);
             System.out.println("Registration successful!");
+            logger.info("User registered successfully with email: {}", email);
+        } catch (UserService.ServiceException e) {
+            System.out.println("Error: " + e.getMessage());
+            logger.error("Registration error for email {}: {}", email, e.getMessage());
         } catch (Exception e) {
+            // Handle unexpected exceptions here if needed
             System.out.println("Error: " + e.getMessage());
         }
+
     }
 
 
@@ -120,6 +140,12 @@ public class PasswordManagerCLI {
         // Email validation
         if (!InputValidator.isValidInput(email) || !EMAIL_PATTERN.matcher(email).matches()) {
             System.out.println("Invalid email format. Please try again.");
+            logger.warn("Invalid login attempt with email: {}", email);
+            return;
+        }
+
+        if (isUserBlocked(email)) {
+            System.out.println("Too many failed attempts. Please try again later.");
             return;
         }
 
@@ -132,10 +158,43 @@ public class PasswordManagerCLI {
 
         if (userService.login(email, password)) {
             System.out.println("Login successful!");
+            resetFailedAttempts(email);
             postLoginMenu(email);
+            logger.info("User logged in successfully: {}", email);
         } else {
             System.out.println("Login failed. Check your email and password.");
+            incrementFailedAttempts(email);
+            logger.warn("Failed login attempt for email: {}", email);
         }
+    }
+
+    private boolean isUserBlocked(String email) {
+        if (blockedUsers.containsKey(email)) {
+            Instant unblockTime = blockedUsers.get(email);
+            if (Instant.now().isBefore(unblockTime)) {
+                return true;
+            } else {
+                blockedUsers.remove(email);
+            }
+        }
+        return false;
+    }
+    private void incrementFailedAttempts(String email) {
+        int attempts = failedAttempts.getOrDefault(email, 0) + 1;
+        failedAttempts.put(email, attempts);
+
+        if (attempts >= MAX_FAILED_ATTEMPTS) {
+            System.out.println("Too many failed attempts. You are blocked for 5 minutes.");
+            blockedUsers.put(email, Instant.now().plusMillis(BLOCK_DURATION_MS));
+            failedAttempts.remove(email); // Reset failed attempts after blocking
+            logger.warn("User {} blocked after {} failed attempts", email, MAX_FAILED_ATTEMPTS);
+        } else {
+            System.out.println("Failed attempts: " + attempts + "/" + MAX_FAILED_ATTEMPTS);
+        }
+    }
+
+    private void resetFailedAttempts(String email) {
+        failedAttempts.remove(email);
     }
 
     private String maskPasswordInput() {
@@ -150,19 +209,14 @@ public class PasswordManagerCLI {
 
             try {
                 while (true) {
-                    // Read a single character at a time
                     int input = System.in.read();
-                    if (input == '\n' || input == '\r') break; // Stop at new line
-                    if (input != -1) {
-                        System.out.print("*"); // Mask the character
-                        password.append((char) input);
-                    }
+                    if (input == '\n' || input == '\r') break;
+                    password.append((char) input);
                 }
             } catch (Exception e) {
-                System.out.println("\nError reading password input.");
-                return "";
+                e.printStackTrace();
             }
-            System.out.println();
+
             return password.toString().trim();
         }
     }
@@ -231,7 +285,17 @@ public class PasswordManagerCLI {
             return;
         }
 
-        String password = maskPasswordInput();
+        String password = maskPasswordInput().trim();
+
+        if (password.length() < MIN_PASSWORD_LENGTH || password.length() > MAX_PASSWORD_LENGTH) {
+            System.out.println("Password must be between " + MIN_PASSWORD_LENGTH + " and " + MAX_PASSWORD_LENGTH + " characters long.");
+            return;
+        }
+
+        if (!password.matches(ALLOWED_PASSWORD_PATTERN)) {
+            System.out.println("Password contains invalid characters. Only letters, numbers, and the following special characters are allowed: !@#$%^&*");
+            return;
+        }
 
         if (password.isEmpty()) {
             System.out.println("Password cannot be empty.");
@@ -239,6 +303,7 @@ public class PasswordManagerCLI {
         }
 
         try {
+
             userService.addPassword(email, description, password);
             System.out.println("Password added successfully!");
         } catch (Exception e) {
@@ -292,11 +357,26 @@ public class PasswordManagerCLI {
                     continue;
                 }
 
-                String newPassword = maskPasswordInput();
+                String newPassword = maskPasswordInput().trim();
+
+                if (newPassword.length() < MIN_PASSWORD_LENGTH || newPassword.length() > MAX_PASSWORD_LENGTH) {
+                    System.out.println("Password must be between " + MIN_PASSWORD_LENGTH + " and " + MAX_PASSWORD_LENGTH + " characters long.");
+                    continue;
+                }
+
+                if (!newPassword.matches(ALLOWED_PASSWORD_PATTERN)) {
+                    System.out.println("Password contains invalid characters. Only letters, numbers, and the following special characters are allowed: !@#$%^&*");
+                    continue;
+                }
+
+
+
                 if (newPassword.isEmpty()) {
                     System.out.println("Password cannot be empty.");
                     continue;
                 }
+
+
 
                 // Update the password
                 userService.modifyPassword(passwordId, newDescription, newPassword, userService.getUserByEmail(email));
