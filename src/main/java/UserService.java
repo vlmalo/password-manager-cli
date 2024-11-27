@@ -5,8 +5,11 @@ import org.springframework.security.crypto.bcrypt.BCrypt;
 import javax.crypto.SecretKey;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class UserService {
+
+
     private final UserRepository userRepository;
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
@@ -38,13 +41,17 @@ public class UserService {
 
 
 
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+            "^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*\\.[A-Za-z]{2,}$",
+            Pattern.CASE_INSENSITIVE
+    );
+
+
     private void validateEmail(String email) throws Exception {
-        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
-        if (!email.matches(emailRegex)) {
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
             throw new Exception("Invalid email format.");
         }
     }
-
 
     public void register(String email, String password) throws ServiceException {
         try {
@@ -62,7 +69,7 @@ public class UserService {
             throw e;
         } catch (Exception e) {
             logger.error("Unexpected error during registration for email: {}", email, e);
-            throw new ServiceException("An unexpected error occurred. Please try again later.");
+            throw new ServiceException("An unexpected error occurred during registration for email. Please try again later.");
         }
     }
 

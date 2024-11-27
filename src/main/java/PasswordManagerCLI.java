@@ -21,7 +21,7 @@ public class PasswordManagerCLI {
     private static final long BLOCK_DURATION_MS = 300_000; // ms, 5 minutes
 
     // Patterns and length constraints for validations
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     public static final int MIN_PASSWORD_LENGTH = 8;
     private static final int MAX_EMAIL_LENGTH = 60;
     public static final int MAX_PASSWORD_LENGTH = 30;
@@ -82,11 +82,7 @@ public class PasswordManagerCLI {
         System.out.print("Enter email: ");
         String email = scanner.nextLine().trim().toLowerCase();
 
-        if (!InputValidator.isValidInput(email) || !EMAIL_PATTERN.matcher(email).matches()) {
-            System.out.println("Invalid email format. Please try again.");
-            logger.warn("Invalid email format: {}", email);
-            return;
-        }
+
         if (email.length() > MAX_EMAIL_LENGTH) {
             System.out.println("Email is too long. Maximum length is " + MAX_EMAIL_LENGTH + " characters.");
             return;
@@ -123,7 +119,7 @@ public class PasswordManagerCLI {
             logger.info("User registered successfully with email: {}", email);
         } catch (UserService.ServiceException e) {
             System.out.println("Error: " + e.getMessage());
-            logger.error("Registration error for email {}: {}", email, e.getMessage());
+            logger.error("Registration error for email {}: {}", email, e.getMessage(), e);
         } catch (Exception e) {
             // Handle unexpected exceptions here if needed
             System.out.println("Error: " + e.getMessage());
