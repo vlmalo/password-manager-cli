@@ -2,42 +2,38 @@
 
 This project is a simple command-line password manager written in Java. It securely stores and retrieves passwords, and uses a PostgreSQL database for storage. The project includes a database setup with Docker, Maven for building the project, and a shaded JAR for execution.
 
+---
+
 ## Key Features
 
-### Security Features
-- **JWT Authentication**: Secure user authentication with tokens stored in HTTP-only cookies.
-- **JPA with Prepared Statements**: Utilizes Java Persistence API (JPA) to abstract database operations and prevent SQL injection attacks through parameterized queries.
-- **CSRF Protection**: Guards against unauthorized state-changing requests.
-- **AES Encryption**: Passwords stored in the database are encrypted with a unique user-specific key.
-- **PBKDF2 Key Derivation**: Converts user-provided passwords into secure AES-compatible keys.
-- **CORS Configuration**: Limits API access to trusted origins only.
-- **UUIDs**: Used for database identifiers to prevent predictability.
-  
-### Application Features
-- **User Authentication**: Login and registration with encrypted passwords (hashed using bcrypt).
-- **Password Management**:
-  - Add new password entries.
-  - Retrieve stored passwords.
-  - Update or delete existing passwords.
-- **Dockerized Database**: Simplified PostgreSQL setup with a Docker container.
-- **Built-in Validation**: All inputs are validated to ensure secure data handling.
-
-### User Interface Previews
-
-#### Login Page
-![Login Page](https://github.com/user-attachments/assets/5bb3298d-55e7-4bf0-88bf-850df1d171d4)
-
-#### Registration Page
-![Registration Page](https://github.com/user-attachments/assets/96c65c57-98e9-47a6-8f1d-206ec4508549)
-
-#### Main Menu
-![Main Menu](https://github.com/user-attachments/assets/ff3377de-fb21-406b-8f15-1d7561ce99a3)
-
-#### Add/Modify Password Page
-![Add/Modify Password](https://github.com/user-attachments/assets/1fa9ab81-2633-45c4-b18a-dad1ac2c511a)
+- **Secure Password Storage**: Passwords are stored securely in a PostgreSQL database.
+- **Command-Line Interface (CLI)**: Lightweight and user-friendly terminal-based interaction.
+- **Shaded JAR**: Self-contained executable JAR for portability.
+- **Cross-Platform**: Runs on any system with Java 19 or later.
+- **Maven Build**: Automated dependency management and build process.
+- **Logging Frameworks**: 
+  - **Logback** and **Log4j** are integrated for robust logging to track system activity and errors.
+- **Prepared Statements**: Ensures secure and efficient database queries, preventing SQL injection attacks.
+- **Brute Force Defense**: Implements measures to detect and mitigate brute force attacks.
 
 ---
 
+## Application Features
+
+- **Add Passwords**: Store website credentials (website, username, password) securely.
+- **Retrieve Passwords**: Quickly fetch stored passwords using the website name.
+- **Delete Passwords**: Remove credentials that are no longer needed.
+- **Database Management**:
+  - Automatically connects to a PostgreSQL database using Docker.
+  - Configurable database credentials.
+- **Logging**:
+  - Tracks application events using Logback and Log4j, ensuring maintainability and monitoring. Log rotation is also implemented.
+- **Security Enhancements**:
+  - Prepared statements protect against SQL injection.
+  - Brute force defense mechanisms safeguard against repeated unauthorized access attempts.
+- **Error Handling**: Graceful error messages for invalid commands or database issues.
+
+---
 
 ## Prerequisites
 
